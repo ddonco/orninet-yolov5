@@ -15,8 +15,9 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
-def detect(save_img=False):
-    source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+def detect(opt, save_img=False):
+    source, weights, view_img, save_txt, imgsz, post_results, post_url = \
+        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
 
@@ -209,9 +210,9 @@ class DetectOptions():
         self.name = 'exp'
         # existing project/name ok, do not increment
         self.exist_ok = False
-        # database path
+        # app server url
         self.post_url = ''
-        # insert image name and detection data into database
+        # POST results to app server
         self.post_results = False
 
 
@@ -228,9 +229,9 @@ if __name__ == '__main__':
     options.post_url = 'http://localhost:5000/api/post-detection'
 
     with torch.no_grad():
-        if opt.update:  # update all models (to fix SourceChangeWarning)
-            for opt.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
-                detect()
-                strip_optimizer(opt.weights)
+        if options.update:  # update all models (to fix SourceChangeWarning)
+            for options.weights in ['yolov5s.pt', 'yolov5m.pt', 'yolov5l.pt', 'yolov5x.pt']:
+                detect(options)
+                strip_optimizer(options.weights)
         else:
-            detect()
+            detect(options)
