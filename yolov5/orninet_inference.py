@@ -1,6 +1,5 @@
 import argparse
 import datetime
-import time
 import json
 import requests
 import sys
@@ -214,7 +213,7 @@ if __name__ == '__main__':
     options.device = '0'
     options.weights = "./weights/yolov5s.pt"
     options.source = "./inference/images/birds.jpg"
-    options.output = "/Users/dillon.donohue/source/orninet-app/images" # "./inference/output"
+    options.output = "./inference/output" # "/Users/dillon.donohue/source/orninet-app/images"
     options.save_txt = True
     options.post_results = True
     options.post_url = 'http://localhost:5000/api/post-detection'
