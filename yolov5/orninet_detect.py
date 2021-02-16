@@ -222,7 +222,7 @@ if __name__ == '__main__':
     options = DetectOptions()
     options.device = '0'
     options.weights = "./weights/yolov5s.pt"
-    options.source = "./inference/images/birds.jpg"
+    options.source = "./inference/images/zidane.jpg"
     options.output = "./inference/output" # "/Users/dillon.donohue/source/orninet-app/images"
     options.save_txt = True
     options.post_results = True
