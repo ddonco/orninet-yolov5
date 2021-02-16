@@ -128,7 +128,7 @@ def detect(opt, save_img=False):
                 if post_results: # Build POST payload dict
                     payload = {
                         'categories': {'detections': results},
-                        'name': p,
+                        'name': str(p),
                         'timestamp': str(datetime.datetime.now())
                     }
 
