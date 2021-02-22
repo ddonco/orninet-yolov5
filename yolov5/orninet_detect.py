@@ -2,8 +2,10 @@ import argparse
 import time
 import datetime
 import json
+import logging
 import requests
 from pathlib import Path
+import threading
 
 import cv2
 import torch
@@ -18,11 +20,35 @@ from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
+def save_image(path, image):
+    try:
+        cv2.imwrite(path, image)
+        print(f'Image ({image.shape}) saved to: {path}')
+    except Exception as ex:
+        logging.error(f'Image save Error: \n{ex}')
+
+def save_text():
+    pass
+
+# POST detection payload to app server
+def post_request(post_url, payload):
+    try:
+        response = requests.post(post_url, json=json.dumps(payload))
+        if response.status_code != 200:
+            print(f'\nDetection POST Error: \n{response.reason}\n')
+            logging.error(f'Detection POST Error: \n{response.reason}')
+        else:
+            print('\nDetection POST Successful\n')
+    except Exception as ex:
+        print(f'\nDetection POST Error: \n{ex}\n')
+        logging.error(f'Detection POST Error: \n{ex}')
+
 def detect(opt, save_img=False):
-    source, weights, view_img, save_txt, imgsz, post_results, post_url = \
-        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url
+    source, weights, view_img, save_txt, imgsz, post_results, post_url, target = \
+        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url, opt.target
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
+    target_found = False
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
@@ -51,7 +77,7 @@ def detect(opt, save_img=False):
     if webcam:
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride)
+        dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
     else:
         save_img = True
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
@@ -113,37 +139,28 @@ def detect(opt, save_img=False):
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-                    if post_results: # List of results to POST to app server
+                    if post_results and cls == target: # List of results to POST to app server
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()
                         results.append({
                             'species': names[int(cls)],
                             'confidence': conf.item(), 
                             'bbox': xywh
                         })
+                        target_found = True
                     
                     if save_img or view_img:  # Add bbox to image
                         label = f'{names[int(cls)]} {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
-                if post_results: # Build POST payload dict
+                if post_results and target_found: # Build POST payload dict
                     payload = {
                         'categories': {'detections': results},
                         'name': str(p),
                         'timestamp': str(datetime.datetime.now())
                     }
 
-                    # POST detection payload to app server
-                    try:
-                        response = requests.post(post_url, json=json.dumps(payload))
-                        if response.status_code != 200:
-                            # print(f"Detection POST Error: \n{response.reason}")
-                            s += f'\nDetection POST Error: \n{response.reason}\n'
-                        else:
-                            # print("Detection POST Successful")
-                            s += '\nDetection POST Successful\n'
-                    except Exception as ex:
-                        s += f'\nDetection POST Error: \n{ex}\n'
-
+                    post_thread = threading.Thread(target=post_request, args=(post_url, payload,))
+                    post_thread.start()
 
             # Print time (inference + NMS)
             print(f'{s}Done. ({t2 - t1:.3f}s)')
@@ -151,12 +168,15 @@ def detect(opt, save_img=False):
             # Stream results
             if view_img:
                 cv2.imshow(str(p), im0)
-                cv2.waitKey(1) # 1 millisecond
+                if cv2.waitKey(1) == ord('q'):  # q to quit
+                    raise StopIteration
 
             # Save results (image with detections)
-            if save_img:
+            if save_img or target_found:
+                target_found = False
                 if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
+                    save_thread = threading.Thread(target=save_image, args=(save_path, im0,))
+                    save_thread.start()
                 else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path
@@ -217,6 +237,8 @@ class DetectOptions():
         self.post_url = ''
         # POST results to app server
         self.post_results = False
+        # target class for posting images
+        self.target = 0
 
 
 if __name__ == '__main__':
@@ -227,9 +249,11 @@ if __name__ == '__main__':
     options.weights = "./weights/yolov5s.pt"
     options.source = "./inference/images/birds.jpg"
     options.output = "./inference/output" # "/Users/dillon.donohue/source/orninet-app/images"
+    options.target = 14
     options.save_txt = True
     options.post_results = True
     options.post_url = 'http://localhost:5000/api/post-detection'
+    options.log = '/home/dd/source/orninet-yolov3/yolov3/orninet.log'
 
     with torch.no_grad():
         if options.update:  # update all models (to fix SourceChangeWarning)

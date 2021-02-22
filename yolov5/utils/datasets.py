@@ -55,6 +55,32 @@ def exif_size(img):
 
     return s
 
+def gstreamer_pipeline(
+    capture_width=1920,
+    capture_height=1080,
+    display_width=608,
+    display_height=342,
+    framerate=30,
+    flip_method=2,
+):
+    return (
+        "nvarguscamerasrc sensor_mode=0 ! "
+        "video/x-raw(memory:NVMM), "
+        "width=(int)%d, height=(int)%d, "
+        "format=(string)NV12, framerate=(fraction)%d/1 ! "
+        "nvvidconv flip-method=%d ! "
+        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+        "videoconvert ! "
+        "video/x-raw, format=(string)BGR ! appsink"
+        % (
+            capture_width,
+            capture_height,
+            framerate,
+            flip_method,
+            display_width,
+            display_height,
+        )
+    )
 
 def create_dataloader(path, imgsz, batch_size, stride, opt, hyp=None, augment=False, cache=False, pad=0.0, rect=False,
                       rank=-1, world_size=1, workers=8, image_weights=False, quad=False, prefix=''):
@@ -197,6 +223,65 @@ class LoadImages:  # for inference
 
     def __len__(self):
         return self.nf  # number of files
+
+
+class LoadCSICam:  # for inference
+    def __init__(self, pipe='0', img_size=640, stride=32):
+        self.img_size = img_size
+        self.stride = stride
+
+        if pipe.isnumeric():
+            pipe = gstreamer_pipeline()  # local camera
+        # pipe = 'rtsp://192.168.1.64/1'  # IP camera
+        # pipe = 'rtsp://username:password@192.168.1.64/1'  # IP camera with login
+        # pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
+
+        self.pipe = pipe
+        self.cap = cv2.VideoCapture(pipe)  # video capture object
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
+
+    def __iter__(self):
+        self.count = -1
+        return self
+
+    def __next__(self):
+        self.count += 1
+        if cv2.waitKey(1) == ord('q'):  # q to quit
+            self.cap.release()
+            cv2.destroyAllWindows()
+            raise StopIteration
+
+        # Read frame
+        if self.cap.isOpened():
+            if self.pipe == 0:  # local camera
+                ret_val, img0 = self.cap.read()
+                img0 = cv2.flip(img0, 1)  # flip left-right
+            else:  # IP camera
+                n = 0
+                while True:
+                    n += 1
+                    self.cap.grab()
+                    if n % 30 == 0:  # skip frames
+                        ret_val, img0 = self.cap.retrieve()
+                        if ret_val:
+                            break
+
+        # Print
+        assert ret_val, f'Camera Error {self.pipe}'
+        img_path = 'webcam.jpg'
+        print(f'webcam {self.count}: ', end='')
+
+        # Padded resize
+        img = letterbox(img0, self.img_size, stride=self.stride)[0]
+
+        # Convert
+        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+        img = np.ascontiguousarray(img)
+
+        return img_path, img, img0, None
+
+    def __len__(self):
+        return 0
 
 
 class LoadWebcam:  # for inference
