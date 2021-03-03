@@ -208,9 +208,9 @@ class DetectOptions():
         # inference size (pixels)
         self.img_size = 640
         # object confidence threshold
-        self.conf_thres = 0.4
+        self.conf_thres = 0.25
         # IOU threshold for NMS
-        self.iou_thres = 0.5
+        self.iou_thres = 0.45
         # cuda device, i.e. 0 or 0,1,2,3 or cpu
         self.device = ''
         # display results
@@ -220,7 +220,7 @@ class DetectOptions():
         # save confidences in save_txt labels
         self.save_conf = False
         # filter by class
-        self.classes = 0
+        self.classes = None
         # class-agnostic NMS
         self.agnostic_nms = False
         # augmented inference
@@ -250,6 +250,8 @@ if __name__ == '__main__':
     options.source = "./inference/images/birds.jpg"
     options.output = "./inference/output" # "/Users/dillon.donohue/source/orninet-app/images"
     options.target = 14
+    options.conf_thres = 0.25
+    options.classes = 14
     options.save_txt = True
     options.post_results = True
     options.post_url = 'http://localhost:5000/api/post-detection'
