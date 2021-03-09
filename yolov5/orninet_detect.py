@@ -249,15 +249,15 @@ if __name__ == '__main__':
 
     options = DetectOptions()
     options.device = '0'
-    options.weights = "./weights/yolov5s.pt"
-    options.source = "./inference/images/birds.jpg"
-    options.output = "./inference/output" # "/Users/dillon.donohue/source/orninet-app/images"
-    # options.img_size = (342, 608)
+    options.weights = './weights/yolov5s.pt'
+    options.source =  '0' # './inference/images/birds.jpg'
+    options.output = './inference/output' # "/Users/dillon.donohue/source/orninet-app/images"
+    options.img_size = (342, 608)
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
-    options.save_txt = True
-    options.post_results = True
+    options.save_txt = False
+    options.post_results = False
     options.post_url = 'http://localhost:5000/api/post-detection'
     options.log = '/home/dd/source/orninet-yolov3/yolov3/orninet.log'
 
