@@ -252,6 +252,7 @@ if __name__ == '__main__':
     options.weights = "./weights/yolov5s.pt"
     options.source = "./inference/images/birds.jpg"
     options.output = "./inference/output" # "/Users/dillon.donohue/source/orninet-app/images"
+    # options.img_size = (342, 608)
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
