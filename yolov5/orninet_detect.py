@@ -75,6 +75,7 @@ def detect(opt, save_img=False):
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
+        imgsz = check_img_size(imgsz, s=stride)  # check img_size
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
@@ -90,7 +91,7 @@ def detect(opt, save_img=False):
     # Run inference
     if device.type != 'cpu':
         if webcam:
-            model(torch.zeros(1, 3, imgsz[1], imgsz[0]).to(device).type_as(next(model.parameters())))  # run once
+            model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         else:
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
@@ -256,7 +257,7 @@ if __name__ == '__main__':
     options.weights = './weights/yolov5s.pt'
     options.source =  '0' # './inference/images/birds.jpg'
     options.output = './inference/output' # "/Users/dillon.donohue/source/orninet-app/images"
-    options.img_size = (342, 608)
+    options.img_size = 608 # (342, 608)
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
