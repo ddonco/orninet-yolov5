@@ -62,7 +62,7 @@ def detect(opt, save_img=False):
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
     stride = int(model.stride.max())  # model stride
-    imgsz = check_img_size(imgsz, s=stride)  # check img_size
+    
     if half:
         model.half()  # to FP16
 
@@ -79,6 +79,7 @@ def detect(opt, save_img=False):
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
     else:
+        imgsz = check_img_size(imgsz, s=stride)  # check img_size
         save_img = True
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
