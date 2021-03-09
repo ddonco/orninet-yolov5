@@ -227,6 +227,7 @@ class LoadImages:  # for inference
 
 class LoadCSICam:  # for inference
     def __init__(self, pipe='0', img_size=640, stride=32):
+        self.mode = 'stream'
         self.img_size = img_size
         self.stride = stride
 
@@ -286,6 +287,7 @@ class LoadCSICam:  # for inference
 
 class LoadWebcam:  # for inference
     def __init__(self, pipe='0', img_size=640, stride=32):
+        self.mode = 'stream'
         self.img_size = img_size
         self.stride = stride
 
