@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 from numpy import random
 
 from models.experimental import attempt_load
-from utils.datasets import LoadCSICam, LoadImages
+from utils.datasets import LoadCSICam, LoadImages, LoadStreams
 from utils.general import check_img_size, check_requirements, non_max_suppression, apply_classifier, scale_coords, \
     xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
@@ -62,7 +62,7 @@ def detect(opt, save_img=False):
     # Load model
     model = attempt_load(weights, map_location=device)  # load FP32 model
     stride = int(model.stride.max())  # model stride
-    
+    imgsz = check_img_size(imgsz, s=stride)  # check img_size
     if half:
         model.half()  # to FP16
 
@@ -75,12 +75,13 @@ def detect(opt, save_img=False):
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
-        imgsz = check_img_size(imgsz, s=stride)  # check img_size
+        
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
+        # dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
+        dataset = LoadStreams(source, img_size=imgsz, stride=stride)
     else:
-        imgsz = check_img_size(imgsz, s=stride)  # check img_size
+        # imgsz = check_img_size(imgsz, s=stride)  # check img_size
         save_img = True
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
@@ -173,14 +174,15 @@ def detect(opt, save_img=False):
 
             # Stream results
             if view_img:
-                cv2.imshow(str(p), im0)
+                print(im0.shape)
+                cv2.imshow('Image Feed', im0)
                 if cv2.waitKey(1) == ord('q'):  # q to quit
                     raise StopIteration
 
             # Save results (image with detections)
             if save_img or target_found:
                 target_found = False
-                if dataset.mode == 'image':
+                if dataset.mode == 'stream' or dataset.mode == 'image':
                     save_thread = threading.Thread(target=save_image, args=(save_path, im0,))
                     save_thread.start()
                 else:  # 'video'
@@ -257,7 +259,7 @@ if __name__ == '__main__':
     options.weights = './weights/yolov5s.pt'
     options.source =  '0' # './inference/images/birds.jpg'
     options.output = './inference/output' # "/Users/dillon.donohue/source/orninet-app/images"
-    options.img_size = 608 # (342, 608)
+    options.img_size = 640 # (342, 608)
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
