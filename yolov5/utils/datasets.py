@@ -298,7 +298,7 @@ class LoadCSICam:  # for inference
         self.cap = cv2.VideoCapture(pipe)  # video capture object
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
 
-        assert cap.isOpened(), f'Failed to open {s}'
+        assert self.cap.isOpened(), f'Failed to open {s}'
 
         w = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
