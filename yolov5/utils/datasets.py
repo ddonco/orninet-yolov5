@@ -292,7 +292,7 @@ class LoadCSICam:  # for inference
         self.img0 = None
 
         if pipe.isnumeric():
-            pipe = gstreamer_pipeline()  # local camera
+            pipe = gstreamer_pipeline(display_width=640, display_height=360)  # local camera
 
         self.pipe = pipe
         self.cap = cv2.VideoCapture(pipe)  # video capture object
