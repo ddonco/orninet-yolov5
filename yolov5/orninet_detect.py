@@ -78,10 +78,8 @@ def detect(opt, save_img=False):
         
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
-        # dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
-        dataset = LoadWebcam(source, img_size=imgsz, stride=stride)
+        dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
     else:
-        # imgsz = check_img_size(imgsz, s=stride)  # check img_size
         save_img = True
         dataset = LoadImages(source, img_size=imgsz, stride=stride)
 
