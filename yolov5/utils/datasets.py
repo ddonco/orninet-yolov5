@@ -225,21 +225,106 @@ class LoadImages:  # for inference
         return self.nf  # number of files
 
 
+# class LoadCSICam:  # for inference
+#     def __init__(self, pipe='0', img_size=640, stride=32):
+#         self.mode = 'stream'
+#         self.img_size = img_size
+#         self.stride = stride
+#         self.img0 = None
+
+#         if pipe.isnumeric():
+#             pipe = gstreamer_pipeline()  # local camera
+
+#         self.pipe = pipe
+#         self.cap = cv2.VideoCapture(pipe)  # video capture object
+#         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
+
+#     def __iter__(self):
+#         self.count = -1
+#         return self
+
+#     def __next__(self):
+#         self.count += 1
+#         if cv2.waitKey(1) == ord('q'):  # q to quit
+#             self.cap.release()
+#             cv2.destroyAllWindows()
+#             raise StopIteration
+
+#         # Read frame
+#         if self.cap.isOpened():
+#             if self.pipe == 0:  # local camera
+#                 ret_val, img0 = self.cap.read()
+#                 img0 = cv2.flip(img0, 1)  # flip left-right
+#             else:  # IP camera
+#                 n = 0
+#                 while True:
+#                     n += 1
+#                     self.cap.grab()
+#                     if n % 30 == 0:  # skip frames
+#                         ret_val, img0 = self.cap.retrieve()
+#                         if ret_val:
+#                             break
+
+#         # Print
+#         assert ret_val, f'Camera Error {self.pipe}'
+#         img_path = 'webcam.jpg'
+#         print(f'webcam {self.count}: ', end='')
+
+#         # Padded resize
+#         img = letterbox(img0, self.img_size, stride=self.stride)[0]
+
+#         # Convert
+#         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+#         img = np.ascontiguousarray(img)
+
+#         return img_path, img, img0, None
+
+#     def __len__(self):
+#         return 0
+
+
 class LoadCSICam:  # for inference
     def __init__(self, pipe='0', img_size=640, stride=32):
-        self.mode = 'stream'
+        self.mode = 'cam'
+        self.sources = [pipe]
         self.img_size = img_size
         self.stride = stride
+        self.img0 = None
 
         if pipe.isnumeric():
             pipe = gstreamer_pipeline()  # local camera
-        # pipe = 'rtsp://192.168.1.64/1'  # IP camera
-        # pipe = 'rtsp://username:password@192.168.1.64/1'  # IP camera with login
-        # pipe = 'http://wmccpinetop.axiscam.net/mjpg/video.mjpg'  # IP golf camera
 
         self.pipe = pipe
         self.cap = cv2.VideoCapture(pipe)  # video capture object
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
+
+        assert cap.isOpened(), f'Failed to open {s}'
+
+        w = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        fps = self.cap.get(cv2.CAP_PROP_FPS) % 100
+        _, self.img0 = self.cap.read()  # guarantee first frame
+
+        thread = Thread(target=self.update, args=([self.cap]), daemon=True)
+        print(f' success ({w}x{h} at {fps:.2f} FPS).\n')
+        thread.start()
+
+        # check for common shapes
+        s = np.stack([letterbox(self.img0, self.img_size, stride=self.stride)[0].shape], 0)  # shapes
+        self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
+
+    def update(self, cap):
+        # Read next stream frame in a daemon thread
+        n = 0
+        while cap.isOpened():
+            n += 1
+            # _, self.imgs[index] = cap.read()
+            cap.grab()
+            if n == 4:  # read every 4th frame
+                _, self.img0 = cap.retrieve()
+                n = 0
+            time.sleep(0.01)  # wait time
 
     def __iter__(self):
         self.count = -1
@@ -247,47 +332,36 @@ class LoadCSICam:  # for inference
 
     def __next__(self):
         self.count += 1
+        img0_c = self.img0.copy()
+
         if cv2.waitKey(1) == ord('q'):  # q to quit
-            self.cap.release()
             cv2.destroyAllWindows()
             raise StopIteration
 
-        # Read frame
-        if self.cap.isOpened():
-            if self.pipe == 0:  # local camera
-                ret_val, img0 = self.cap.read()
-                img0 = cv2.flip(img0, 1)  # flip left-right
-            else:  # IP camera
-                n = 0
-                while True:
-                    n += 1
-                    self.cap.grab()
-                    if n % 30 == 0:  # skip frames
-                        ret_val, img0 = self.cap.retrieve()
-                        if ret_val:
-                            break
-
         # Print
-        assert ret_val, f'Camera Error {self.pipe}'
         img_path = 'webcam.jpg'
         print(f'webcam {self.count}: ', end='')
 
-        # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride)[0]
+        # Letterbox
+        img = letterbox(img0_c, self.img_size, auto=self.rect, stride=self.stride)[0]
+
+        # Stack
+        img = np.expand_dims(img, 0)
 
         # Convert
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+        img = img[:, :, :, ::-1].transpose(0, 3, 1, 2)  # BGR to RGB, to bsx3x416x416
         img = np.ascontiguousarray(img)
 
-        return img_path, img, img0, None
+        return self.sources, img, [img0_c], None
 
     def __len__(self):
-        return 0
+        return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
 
 class LoadWebcam:  # for inference
     def __init__(self, pipe='0', img_size=640, stride=32):
-        self.mode = 'stream'
+        self.mode = 'cam'
+        self.sources = [pipe]
         self.img_size = img_size
         self.stride = stride
 
@@ -301,44 +375,61 @@ class LoadWebcam:  # for inference
         self.cap = cv2.VideoCapture(pipe)  # video capture object
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
 
+        assert self.cap.isOpened(), f'Failed to open {s}'
+
+        w = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        fps = self.cap.get(cv2.CAP_PROP_FPS) % 100
+        _, self.img0 = self.cap.read()  # guarantee first frame
+
+        thread = Thread(target=self.update, args=([self.cap]), daemon=True)
+        print(f' success ({w}x{h} at {fps:.2f} FPS).\n')
+        thread.start()
+
+        # check for common shapes
+        s = np.stack([letterbox(self.img0, self.img_size, stride=self.stride)[0].shape], 0)  # shapes
+        self.rect = np.unique(s, axis=0).shape[0] == 1  # rect inference if all shapes equal
+
+    def update(self, cap):
+        # Read next stream frame in a daemon thread
+        n = 0
+        while cap.isOpened():
+            n += 1
+            # _, self.imgs[index] = cap.read()
+            cap.grab()
+            if n == 4:  # read every 4th frame
+                _, self.img0 = cap.retrieve()
+                n = 0
+            time.sleep(0.01)  # wait time
+
     def __iter__(self):
         self.count = -1
         return self
 
     def __next__(self):
         self.count += 1
+
+        img0c = self.img0.copy()
         if cv2.waitKey(1) == ord('q'):  # q to quit
-            self.cap.release()
             cv2.destroyAllWindows()
             raise StopIteration
 
-        # Read frame
-        if self.pipe == 0:  # local camera
-            ret_val, img0 = self.cap.read()
-            img0 = cv2.flip(img0, 1)  # flip left-right
-        else:  # IP camera
-            n = 0
-            while True:
-                n += 1
-                self.cap.grab()
-                if n % 30 == 0:  # skip frames
-                    ret_val, img0 = self.cap.retrieve()
-                    if ret_val:
-                        break
-
         # Print
-        assert ret_val, f'Camera Error {self.pipe}'
         img_path = 'webcam.jpg'
         print(f'webcam {self.count}: ', end='')
 
-        # Padded resize
-        img = letterbox(img0, self.img_size, stride=self.stride)[0]
+        # Letterbox
+        img = letterbox(img0c, self.img_size, auto=self.rect, stride=self.stride)[0]
+
+        # Stack
+        img = np.expand_dims(img, axis=0)
 
         # Convert
-        img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
+        img = img[:, :, :, ::-1].transpose(0, 3, 1, 2)  # BGR to RGB, to bsx3x416x416
         img = np.ascontiguousarray(img)
 
-        return img_path, img, img0, None
+        return self.sources, img, [img0c], None
 
     def __len__(self):
         return 0

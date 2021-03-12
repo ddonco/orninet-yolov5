@@ -13,7 +13,7 @@ import torch.backends.cudnn as cudnn
 from numpy import random
 
 from models.experimental import attempt_load
-from utils.datasets import LoadCSICam, LoadImages, LoadStreams
+from utils.datasets import LoadCSICam, LoadImages, LoadWebcam, LoadStreams
 from utils.general import check_img_size, check_requirements, non_max_suppression, apply_classifier, scale_coords, \
     xyxy2xywh, strip_optimizer, set_logging, increment_path
 from utils.plots import plot_one_box
@@ -79,7 +79,7 @@ def detect(opt, save_img=False):
         view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
         # dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
-        dataset = LoadStreams(source, img_size=imgsz, stride=stride)
+        dataset = LoadWebcam(source, img_size=imgsz, stride=stride)
     else:
         # imgsz = check_img_size(imgsz, s=stride)  # check img_size
         save_img = True
@@ -97,6 +97,7 @@ def detect(opt, save_img=False):
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
     for path, img, im0s, vid_cap in dataset:
+        # print(f'## img shape: {img.shape}, im0s shape: {len(im0s)}, {im0s[0].shape} ##')
         t_start = time.time()
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -174,7 +175,7 @@ def detect(opt, save_img=False):
 
             # Stream results
             if view_img:
-                print(im0.shape)
+                # print(f'im0 shape: {im0.shape}')
                 cv2.imshow('Image Feed', im0)
                 if cv2.waitKey(1) == ord('q'):  # q to quit
                     raise StopIteration
@@ -182,7 +183,7 @@ def detect(opt, save_img=False):
             # Save results (image with detections)
             if save_img or target_found:
                 target_found = False
-                if dataset.mode == 'stream' or dataset.mode == 'image':
+                if dataset.mode == 'cam' or dataset.mode == 'image':
                     save_thread = threading.Thread(target=save_image, args=(save_path, im0,))
                     save_thread.start()
                 else:  # 'video'
