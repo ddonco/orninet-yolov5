@@ -23,9 +23,9 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 def save_image(path, image):
     try:
         cv2.imwrite(path, image)
-        print(f'Image ({image.shape}) saved to: {path}')
+        print(f'Image ({image.shape}) saved to: {path}\n')
     except Exception as ex:
-        logging.error(f'Image save Error: \n{ex}')
+        logging.error(f'Image save Error: \n{ex}\n')
 
 def save_text():
     pass
@@ -36,12 +36,12 @@ def post_request(post_url, payload):
         response = requests.post(post_url, json=json.dumps(payload))
         if response.status_code != 200:
             print(f'\nDetection POST Error: \n{response.reason}\n')
-            logging.error(f'Detection POST Error: \n{response.reason}')
+            logging.error(f'Detection POST Error: \n{response.reason}\n')
         else:
             print('\nDetection POST Successful\n')
     except Exception as ex:
         print(f'\nDetection POST Error: \n{ex}\n')
-        logging.error(f'Detection POST Error: \n{ex}')
+        logging.error(f'Detection POST Error: \n{ex}\n')
 
 def detect(opt, save_img=False):
     source, weights, view_img, save_txt, imgsz, post_results, post_url, target = \
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     options.save_txt = False
     options.post_results = False
     options.post_url = 'http://localhost:5000/api/post-detection'
-    options.log = '/home/dd/source/orninet-yolov3/yolov3/orninet.log'
+    options.log = '/home/dd/source/orninet-yolov5/yolov5/orninet.log'
 
     with torch.no_grad():
         if options.update:  # update all models (to fix SourceChangeWarning)
