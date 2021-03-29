@@ -44,8 +44,8 @@ def post_request(post_url, payload):
         logging.error(f'Detection POST Error: \n{ex}\n')
 
 def detect(opt, save_img=False):
-    source, weights, view_img, save_txt, imgsz, post_results, post_url, target = \
-        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url, opt.target
+    source, weights, view_img, save_txt, imgsz, post_results, post_url, target, enable_print = \
+        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url, opt.target, opt.enable_print
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
     target_found = False
@@ -75,8 +75,6 @@ def detect(opt, save_img=False):
     # Set Dataloader
     vid_path, vid_writer = None, None
     if webcam:
-        
-        view_img = True
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadCSICam(source, img_size=imgsz, stride=stride)
     else:
@@ -95,7 +93,6 @@ def detect(opt, save_img=False):
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
     t0 = time.time()
     for path, img, im0s, vid_cap in dataset:
-        # print(f'## img shape: {img.shape}, im0s shape: {len(im0s)}, {im0s[0].shape} ##')
         t_start = time.time()
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -169,7 +166,7 @@ def detect(opt, save_img=False):
                     post_thread.start()
 
             # Print time (inference + NMS)
-            print(f'{s}Done. ({t2 - t1:.3f}s)')
+            if enable_print: print(f'{s}Done. ({t2 - t1:.3f}s)')
 
             # Stream results
             if view_img:
@@ -197,13 +194,13 @@ def detect(opt, save_img=False):
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
 
-        print(f'FPS: {1 / (time.time() - t_start):.2f}')
+        if enable_print: print(f'FPS: {1 / (time.time() - t_start):.2f}')
 
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
 
-    print(f'Done. ({time.time() - t0:.3f}s)')
+    if enable_print: print(f'Done. ({time.time() - t0:.3f}s)')
 
 
 class DetectOptions():
@@ -248,6 +245,8 @@ class DetectOptions():
         self.post_results = False
         # target class for posting images
         self.target = 0
+        # enable printing to console
+        self.enable_print = True
 
 
 if __name__ == '__main__':
@@ -262,7 +261,9 @@ if __name__ == '__main__':
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
+    options.view_img = False
     options.save_txt = False
+    options.enable_print = False
     options.post_results = True
     options.post_url = 'http://localhost:5000/api/post-detection'
     options.log = '/home/dd/source/orninet-yolov5/yolov5/orninet.log'
