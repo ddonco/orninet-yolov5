@@ -261,7 +261,7 @@ if __name__ == '__main__':
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
-    options.view_img = False
+    options.view_img = True
     options.save_txt = False
     options.enable_print = False
     options.post_results = True
