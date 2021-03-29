@@ -345,7 +345,7 @@ class LoadCSICam:  # for inference
 
         # Print
         img_path = 'webcam.jpg'
-        print(f'webcam {self.count}: ', end='')
+        # print(f'webcam {self.count}: ', end='')
 
         # Letterbox
         img = letterbox(img0_c, self.img_size, auto=self.rect, stride=self.stride)[0]
