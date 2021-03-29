@@ -309,6 +309,7 @@ class LoadCSICam:  # for inference
         while self.img0 == None:
             # wait for camera to start
             time.sleep(0.05)
+            _, self.img0 = self.cap.read()
 
         thread = Thread(target=self.update, args=([self.cap]), daemon=True)
         print(f' success ({w}x{h} at {fps:.2f} FPS).\n')
