@@ -254,7 +254,7 @@ if __name__ == '__main__':
 
     options = DetectOptions()
     options.device = '0'
-    options.weights = './weights/yolov5s.pt'
+    options.weights = '/home/dd/source/orninet-yolov5/yolov5/weights/yolov5s.pt'
     options.source =  '0' # './inference/images/birds.jpg'
     options.output = '/home/dd/source/orninet-app/images'
     options.img_size = 640 # (342, 608)
