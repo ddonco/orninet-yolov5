@@ -235,7 +235,7 @@ class DetectOptions():
         # update all models
         self.update = False
         # enable project creation
-        self.enable_project
+        self.enable_project = True
         # save results to project/name
         self.project = 'runs/detect'
         # save results to project/name
@@ -264,7 +264,7 @@ if __name__ == '__main__':
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
-    options.enable_project
+    options.enable_project = False
     options.view_img = False
     options.save_txt = False
     options.enable_print = False
