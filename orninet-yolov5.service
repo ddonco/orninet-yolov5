@@ -5,7 +5,8 @@ StartLimitIntervalSec=0
 
 [Service]
 Type=simple
+User=dd
 Restart=on-failure
-RestartSec=5
-ExecStart=/usr/bin/python3 -u orninet_detect.py
+RestartSec=30
 WorkingDirectory=/home/dd/source/orninet-yolov5/yolov5
+ExecStart=/usr/bin/python3 -u orninet_detect.py
