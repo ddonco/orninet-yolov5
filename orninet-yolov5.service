@@ -8,5 +8,4 @@ Type=simple
 User=dd
 Restart=on-failure
 RestartSec=30
-WorkingDirectory=/home/dd/source/orninet-yolov5/yolov5
-ExecStart=/usr/bin/python3 -u orninet_detect.py
+ExecStart=/usr/bin/python3 /home/dd/source/orninet-yolov5/yolov5/orninet_detect.py
