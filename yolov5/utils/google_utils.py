@@ -46,7 +46,12 @@ def attempt_download(file, repo='ultralytics/yolov5'):
                 os.system(f'curl -L {url} -o {file}')  # torch.hub.download_url_to_file(url, weights)
             finally:
                 if not file.exists() or file.stat().st_size < 1E6:  # check
-                    file.unlink(True)  # remove partial downloads
+                    
+                    try:
+                        file.unlink()  # remove partial downloads
+                    except FileNotFoundError:
+                        pass
+
                     print(f'ERROR: Download failure: {msg}')
                 print('')
                 return
@@ -58,8 +63,12 @@ def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
     file = Path(file)
     cookie = Path('cookie')  # gdrive cookie
     print(f'Downloading https://drive.google.com/uc?export=download&id={id} as {file}... ', end='')
-    file.unlink(True)  # remove existing file
-    cookie.unlink(True)  # remove existing cookie
+
+    try:
+        file.unlink()  # remove existing file
+        cookie.unlink()  # remove existing cookie
+    except FileNotFoundError:
+        pass
 
     # Attempt file download
     out = "NUL" if platform.system() == "Windows" else "/dev/null"
@@ -69,11 +78,20 @@ def gdrive_download(id='16TiPfZj7htmTyhntwcZyEEAejOUxuT6m', file='tmp.zip'):
     else:  # small file
         s = f'curl -s -L -o {file} "drive.google.com/uc?export=download&id={id}"'
     r = os.system(s)  # execute, capture return
-    cookie.unlink(True)  # remove existing cookie
+
+    try:
+        cookie.unlink()  # remove existing cookie
+    except FileNotFoundError:
+        pass
 
     # Error check
     if r != 0:
-        file.unlink(True)  # remove partial
+    
+        try:
+            file.unlink()  # remove partial
+        except FileNotFoundError:
+            pass
+
         print('Download error ')  # raise Exception('Download error')
         return r
 
