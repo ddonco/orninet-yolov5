@@ -1,11 +1,11 @@
 import argparse
 import time
-import datetime
 import json
 import logging
 import requests
-from pathlib import Path
 import threading
+from datetime import datetime
+from pathlib import Path
 
 import cv2
 import torch
@@ -161,7 +161,7 @@ def detect(opt, save_img=False):
                     payload = {
                         'categories': {'detections': results},
                         'name': str(p),
-                        'timestamp': str(datetime.datetime.now())
+                        'timestamp': str(datetime.now())
                     }
 
                     post_thread = threading.Thread(target=post_request, args=(post_url, payload,))

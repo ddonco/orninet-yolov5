@@ -7,6 +7,7 @@ import os
 import random
 import shutil
 import time
+from datetime import datetime
 from itertools import repeat
 from multiprocessing.pool import ThreadPool
 from pathlib import Path
@@ -306,11 +307,6 @@ class LoadCSICam:  # for inference
         fps = self.cap.get(cv2.CAP_PROP_FPS) % 100
         _, self.img0 = self.cap.read()  # guarantee first frame
 
-        # while self.img0 == None:
-        #     # wait for camera to start
-        #     time.sleep(1)
-        #     _, self.img0 = self.cap.read()
-
         thread = Thread(target=self.update, args=([self.cap]), daemon=True)
         print(f' success ({w}x{h} at {fps:.2f} FPS).\n')
         thread.start()
@@ -329,7 +325,7 @@ class LoadCSICam:  # for inference
             if n == 4:  # read every 4th frame
                 _, self.img0 = cap.retrieve()
                 n = 0
-            time.sleep(0.01)  # wait time
+            time.sleep(0.002)  # wait time
 
     def __iter__(self):
         self.count = -1
@@ -343,9 +339,8 @@ class LoadCSICam:  # for inference
             cv2.destroyAllWindows()
             raise StopIteration
 
-        # Print
-        img_path = 'webcam.jpg'
-        # print(f'webcam {self.count}: ', end='')
+        # Image name
+        name = f'csicam_{self.sources}_{datetime.now().strftime('%Y%m%d_%H%M%S.%f')}'
 
         # Letterbox
         img = letterbox(img0_c, self.img_size, auto=self.rect, stride=self.stride)[0]
@@ -357,7 +352,7 @@ class LoadCSICam:  # for inference
         img = img[:, :, :, ::-1].transpose(0, 3, 1, 2)  # BGR to RGB, to bsx3x416x416
         img = np.ascontiguousarray(img)
 
-        return self.sources, img, [img0_c], None
+        return name, img, [img0_c], None
 
     def __len__(self):
         return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years
