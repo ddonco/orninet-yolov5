@@ -340,7 +340,8 @@ class LoadCSICam:  # for inference
             raise StopIteration
 
         # Image name
-        name = f'csicam_{self.sources}_{datetime.now().strftime('%Y%m%d_%H%M%S.%f')}'
+        timestamp = datetime.now()
+        name = f'csicam_{self.sources}_{timestamp.strftime('%Y%m%d_%H%M%S.%f')}'
 
         # Letterbox
         img = letterbox(img0_c, self.img_size, auto=self.rect, stride=self.stride)[0]
@@ -352,7 +353,7 @@ class LoadCSICam:  # for inference
         img = img[:, :, :, ::-1].transpose(0, 3, 1, 2)  # BGR to RGB, to bsx3x416x416
         img = np.ascontiguousarray(img)
 
-        return name, img, [img0_c], None
+        return name, img, [img0_c], None, timestamp
 
     def __len__(self):
         return 0  # 1E12 frames = 32 streams at 30 FPS for 30 years

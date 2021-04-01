@@ -117,7 +117,7 @@ def detect(opt, save_img=False):
         # Process detections
         for i, det in enumerate(pred):  # detections per image
             if webcam:  # batch_size >= 1
-                p, s, im0, frame = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
+                p, s, im0, frame, timestamp = path[i], '%g: ' % i, im0s[i].copy(), dataset.count
             else:
                 p, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
@@ -161,7 +161,7 @@ def detect(opt, save_img=False):
                     payload = {
                         'categories': {'detections': results},
                         'name': str(p),
-                        'timestamp': str(datetime.now())
+                        'timestamp': str(timestamp)
                     }
 
                     post_thread = threading.Thread(target=post_request, args=(post_url, payload,))
