@@ -123,7 +123,6 @@ def detect(opt, save_img=False):
                 img_name, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
             p = Path(img_name)  # to Path
-            print(p.name)
             save_path = str(save_dir / p.name)  # img.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
