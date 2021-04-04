@@ -226,64 +226,6 @@ class LoadImages:  # for inference
         return self.nf  # number of files
 
 
-# class LoadCSICam:  # for inference
-#     def __init__(self, pipe='0', img_size=640, stride=32):
-#         self.mode = 'stream'
-#         self.img_size = img_size
-#         self.stride = stride
-#         self.img0 = None
-
-#         if pipe.isnumeric():
-#             pipe = gstreamer_pipeline()  # local camera
-
-#         self.pipe = pipe
-#         self.cap = cv2.VideoCapture(pipe)  # video capture object
-#         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 3)  # set buffer size
-
-#     def __iter__(self):
-#         self.count = -1
-#         return self
-
-#     def __next__(self):
-#         self.count += 1
-#         if cv2.waitKey(1) == ord('q'):  # q to quit
-#             self.cap.release()
-#             cv2.destroyAllWindows()
-#             raise StopIteration
-
-#         # Read frame
-#         if self.cap.isOpened():
-#             if self.pipe == 0:  # local camera
-#                 ret_val, img0 = self.cap.read()
-#                 img0 = cv2.flip(img0, 1)  # flip left-right
-#             else:  # IP camera
-#                 n = 0
-#                 while True:
-#                     n += 1
-#                     self.cap.grab()
-#                     if n % 30 == 0:  # skip frames
-#                         ret_val, img0 = self.cap.retrieve()
-#                         if ret_val:
-#                             break
-
-#         # Print
-#         assert ret_val, f'Camera Error {self.pipe}'
-#         img_path = 'webcam.jpg'
-#         print(f'webcam {self.count}: ', end='')
-
-#         # Padded resize
-#         img = letterbox(img0, self.img_size, stride=self.stride)[0]
-
-#         # Convert
-#         img = img[:, :, ::-1].transpose(2, 0, 1)  # BGR to RGB, to 3x416x416
-#         img = np.ascontiguousarray(img)
-
-#         return img_path, img, img0, None
-
-#     def __len__(self):
-#         return 0
-
-
 class LoadCSICam:  # for inference
     def __init__(self, pipe='0', img_size=640, stride=32):
         self.mode = 'cam'
