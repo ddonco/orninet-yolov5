@@ -44,16 +44,17 @@ def post_request(post_url, payload):
         logging.error(f'Detection POST Error: \n{ex}\n')
 
 def detect(opt, save_img=False):
-    source, weights, view_img, save_txt, imgsz, post_results, post_url, target, enable_print, enable_project = \
-        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url, opt.target, opt.enable_print, opt.enable_project
+    source, weights, view_img, save_txt, imgsz, post_results, post_url, target, enable_print, output = \
+        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url, opt.target, opt.enable_print, opt.output
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
     target_found = False
 
     # Directories
-    save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
-
-    if enable_project:
+    if webcam:
+        save_dir = output
+    else:
+        save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # Initialize
@@ -235,8 +236,6 @@ class DetectOptions():
         self.augment = False
         # update all models
         self.update = False
-        # enable project creation
-        self.enable_project = True
         # save results to project/name
         self.project = 'runs/detect'
         # save results to project/name
@@ -265,7 +264,6 @@ if __name__ == '__main__':
     options.target = 14
     options.conf_thres = 0.25
     options.classes = 14
-    options.enable_project = False
     options.view_img = False
     options.save_txt = False
     options.enable_print = False
