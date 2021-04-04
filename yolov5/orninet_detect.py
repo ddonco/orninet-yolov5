@@ -161,7 +161,7 @@ def detect(opt, save_img=False):
                 if post_results and target_found: # Build POST payload dict
                     payload = {
                         'categories': {'detections': results},
-                        'name': str(img_name),
+                        'name': str(p),
                         'timestamp': str(timestamp)
                     }
 
