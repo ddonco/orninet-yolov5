@@ -283,7 +283,7 @@ class LoadCSICam:  # for inference
 
         # Image name
         timestamp = datetime.now()
-        name = f'csicam_{self.sources}_{timestamp.strftime('%Y%m%d_%H%M%S.%f')}'
+        name = f'csicam_{self.sources}_{timestamp.strftime("%Y%m%d_%H%M%S.%f")}'
 
         # Letterbox
         img = letterbox(img0_c, self.img_size, auto=self.rect, stride=self.stride)[0]
