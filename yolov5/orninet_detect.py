@@ -52,7 +52,7 @@ def detect(opt, save_img=False):
 
     # Directories
     if webcam:
-        save_dir = output
+        save_dir = Path(output)
     else:
         save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
@@ -123,6 +123,7 @@ def detect(opt, save_img=False):
                 img_name, s, im0, frame = path, '', im0s, getattr(dataset, 'frame', 0)
 
             p = Path(img_name)  # to Path
+            print(p.name)
             save_path = str(save_dir / p.name)  # img.jpg
             txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
