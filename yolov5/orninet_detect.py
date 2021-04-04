@@ -167,6 +167,7 @@ def detect(opt, save_img=False):
 
                     post_thread = threading.Thread(target=post_request, args=(post_url, payload,))
                     post_thread.start()
+                    print(f'POST payload: {payload}')
 
             # Print time (inference + NMS)
             if enable_print: print(f'{s}Done. ({t2 - t1:.3f}s)')
@@ -184,6 +185,7 @@ def detect(opt, save_img=False):
                 if dataset.mode == 'cam' or dataset.mode == 'image':
                     save_thread = threading.Thread(target=save_image, args=(save_path, im0,))
                     save_thread.start()
+                    print(f'Image Save Path: {save_path}')
                 else:  # 'video'
                     if vid_path != save_path:  # new video
                         vid_path = save_path
