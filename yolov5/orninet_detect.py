@@ -44,8 +44,8 @@ def post_request(post_url, payload):
         logging.error(f'Detection POST Error: \n{ex}\n')
 
 def detect(opt, save_img=False):
-    source, weights, view_img, save_txt, imgsz, post_results, post_url, target, enable_print, output = \
-        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url, opt.target, opt.enable_print, opt.output
+    source, weights, view_img, save_txt, imgsz, post_results, post_url, target, enable_print, output, save_delay = \
+        opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.post_results, opt.post_url, opt.target, opt.enable_print, opt.output, opt.save_delay
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
     target_found = False
@@ -94,9 +94,15 @@ def detect(opt, save_img=False):
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         else:
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+
     t0 = time.time()
+    last_img_timestamp = datetime.now()
+    allow_new_save = False
     for path, img, im0s, vid_cap, timestamp in dataset:
         t_start = time.time()
+        if (timestamp - last_img_timestamp).total_seconds() > save_delay:
+            allow_new_save = True
+
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -158,7 +164,7 @@ def detect(opt, save_img=False):
                         label = f'{names[int(cls)]} {conf:.2f}'
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness=3)
 
-                if post_results and target_found: # Build POST payload dict
+                if post_results and target_found and allow_new_save: # Build POST payload dict
                     payload = {
                         'categories': {'detections': results},
                         'name': str(p),
@@ -180,8 +186,12 @@ def detect(opt, save_img=False):
                     raise StopIteration
 
             # Save results (image with detections)
-            if save_img or target_found:
+            if (save_img or target_found) and allow_new_save:
                 target_found = False
+                allow_new_save = False
+                # Keep timestamp of last image saved to allow for delay between saves
+                last_img_timestamp = timestamp
+
                 if dataset.mode == 'cam' or dataset.mode == 'image':
                     save_thread = threading.Thread(target=save_image, args=(save_path, im0,))
                     save_thread.start()
@@ -198,6 +208,7 @@ def detect(opt, save_img=False):
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
+
 
         if enable_print: print(f'FPS: {1 / (time.time() - t_start):.2f}')
 
@@ -252,6 +263,8 @@ class DetectOptions():
         self.target = 0
         # enable printing to console
         self.enable_print = True
+        # delay in seconds between images saves/posts
+        self.save_delay = 5
 
 
 if __name__ == '__main__':
