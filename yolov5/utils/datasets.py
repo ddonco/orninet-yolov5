@@ -270,7 +270,7 @@ class LoadCSICam:  # for inference
                 n = 0
             time.sleep(0.002)  # wait time
 
-    def shutdown_signal(signal):
+    def shutdown_signal(self, signal):
         self.shutdown = signal
 
     def __iter__(self):

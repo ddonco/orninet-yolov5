@@ -28,7 +28,7 @@ def terminate_signal(signal_number, frame):
     print('Recieved:', signal_number)
     global SYSTEM_SHUTDOWN
     SYSTEM_SHUTDOWN = True
-    raise SystemExit('Exiting Orninet')
+    # raise SystemExit('Exiting Orninet')
     return
 
 def save_image(path, image):
