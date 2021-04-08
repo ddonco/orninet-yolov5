@@ -233,6 +233,7 @@ class LoadCSICam:  # for inference
         self.img_size = img_size
         self.stride = stride
         self.img0 = None
+        self.shutdown = False
 
         if pipe.isnumeric():
             pipe = gstreamer_pipeline(display_width=640, display_height=360)  # local camera
@@ -269,6 +270,9 @@ class LoadCSICam:  # for inference
                 n = 0
             time.sleep(0.002)  # wait time
 
+    def shutdown_signal(signal):
+        self.shutdown = signal
+
     def __iter__(self):
         self.count = -1
         return self
@@ -277,7 +281,8 @@ class LoadCSICam:  # for inference
         self.count += 1
         img0_c = self.img0.copy()
 
-        if cv2.waitKey(1) == ord('q'):  # q to quit
+        if cv2.waitKey(1) == ord('q') or self.shutdown:  # q to quit
+            self.cap.release()
             cv2.destroyAllWindows()
             raise StopIteration
 
