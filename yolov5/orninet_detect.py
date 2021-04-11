@@ -294,7 +294,7 @@ if __name__ == '__main__':
     det.output = '/home/dd/source/orninet-app/images'
     det.img_size = 640 # (342, 608)
     det.target = 14
-    det.conf_thres = 0.60
+    det.conf_thres = 0.70
     det.classes = 14
     det.view_img = False
     det.save_txt = False
