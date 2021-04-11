@@ -221,7 +221,7 @@ class Detector():
                                 'confidence': conf.item(), 
                                 'bbox': xywh
                             })
-                            target_found = True
+                            # target_found = True
                         
                         if save_img or view_img:  # Add bbox to image
                             label = f'{names[int(cls)]} {conf:.2f}'
